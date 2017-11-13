@@ -56,7 +56,31 @@ end_power_loop:
 	j sum
 set_x_to_one:
 	addi $t5, $zero, 1				# set x to 1
+sum:
+	mulou $t7, $t5, $t6				# product = x * mult
+	add $t0, $t0, $t7				# sum += product
+	addi $t1, $t1, 1				# increment address to move to the next character
+	beqz $t2, print_decimal			# when length is 0, print decimal and exit
+	subu $t2, $t2, 1				# decrement length
+	b check_loop					# repeat check_loop
 
+error:
+	la $a0, error_msg				# display error message if input is invalid
+	li $v0, 4
+	syscall
+	j exit					
+
+print_decimal:
+	la $a0, dec_str					# display "Decimal Number:"
+	li $v0, 4
+	syscall
+	move $a0, $t0					# display decimal result
+	li $v0, 1
+	syscall
+
+exit:
+	li $v0, 10						# exit
+	syscall
 
 check_character1:
 	beq $t3, 48, end_check1			# if character is '0',
@@ -162,7 +186,7 @@ end_check16:
 	b power_loop
 
 	.data
-	hex_str: .space 9
-	prompt: .asciiz "Enter Hexadecimal:\n"
-	error_msg: .asciiz "Invalid Hexadcimal Number\n"
-	dec_str: .asciiz "Decimal:\n"
+hex_str: .space 9
+prompt: .asciiz "Enter Hexadecimal: "
+error_msg: .asciiz "Invalid Hexadcimal Number\n"
+dec_str: .asciiz "Decimal: "
