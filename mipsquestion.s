@@ -74,6 +74,11 @@ print_decimal:
 	la $a0, dec_str					# display "Decimal Number:"
 	li $v0, 4
 	syscall
+	bltz $t0, make_unsigned
+	j print
+make_unsigned:
+	abs $t0, $t0
+print:
 	move $a0, $t0					# display decimal result
 	li $v0, 1
 	syscall
