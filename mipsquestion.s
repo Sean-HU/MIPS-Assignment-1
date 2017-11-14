@@ -5,6 +5,9 @@
 # $t4: power
 # $t5: x  (16^n)
 # $t6: mult, the value of the character in string (0, 1, 2,...,15)
+# $t7: product
+# $t8: quotient
+# $t9: remainder
 # decimal = (x * mult0) + (x * mult1) +...+ (x * multn)
 	
 	.text
@@ -26,11 +29,13 @@ length_loop:
 	lb $t3, ($t1)				# load the byte in hex string into $t3
 	beqz $t3, sub_length1		# if character is null, branch to sub_length
 	beq $t3, 10, sub_length2	# if character is '\n' branch to sub_length2
-	add $t2, $t2, 1			# increment length
+	beq $t3, 32, skip_increment
+	add $t2, $t2, 1				# increment length
+skip_increment:
 	addi $t1, $t1, 1			# move to the next character in the string,
 	b length_loop				# and repeat
 sub_length1:					# move length back 2 spaces, to represent the largest exponent
-	subu $t2, $t2, 2
+	sub $t2, $t2, 2
 	j test_length
 sub_length2:					# move length back 1 space to represent the largest exponent
 	sub $t2, $t2, 1
@@ -43,14 +48,14 @@ test_length:
 check_loop:
 	add $t4, $zero, $zero		# initialize power
 	add $t5, $zero, 1			# set x to 1
-	lb $t3, ($t1)				# load byte in $t1
+	lb $t3, ($t1)				# load byte from address
 	j check_character1			# check what the character is
 
 power_loop:
 	beq $t4, $t2, end_power_loop	# if power == length, then end loop
 	mulou $t5, $t5, 16				# x = x * 16
 	addi $t4, $t4, 1				# increment power
-	b power_loop					#and repeat
+	b power_loop					# and repeat
 end_power_loop:
 	beqz $t2, set_x_to_one			# if the string entered had only one character,
 	j sum
@@ -61,7 +66,7 @@ sum:
 	add $t0, $t0, $t7				# sum += product
 	addi $t1, $t1, 1				# increment address to move to the next character
 	beqz $t2, print_decimal			# when length is 0, print decimal and exit
-	subu $t2, $t2, 1				# decrement length
+	sub $t2, $t2, 1					# decrement length
 	b check_loop					# repeat check_loop
 
 error:
@@ -74,15 +79,21 @@ print_decimal:
 	la $a0, dec_str					# display "Decimal Number:"
 	li $v0, 4
 	syscall
-	bltz $t0, make_unsigned
-	j print
-make_unsigned:
-	abs $t0, $t0
-print:
-	move $a0, $t0					# display decimal result
+	add $t9, $zero, 10000			# store 10000 in $t9
+	divu $t0, $t9					# split the value into 2 halves
+	mflo $t8						# store the first half in $t8
+	mfhi $t9						# store the second half in $t9
+	beqz $t8, print_2nd_half		# if the first half is 0, only print the second
+	move $a0, $t8					# display first half
 	li $v0, 1
 	syscall
-
+print_2nd_half:					
+	move $a0, $t9					# display second half
+	li $v0, 1
+	syscall
+	la $a0, new_line
+	li $v0, 4
+	syscall
 exit:
 	li $v0, 10						# exit
 	syscall
@@ -97,69 +108,69 @@ check_character2:
 	beq $t3, 49, end_check2			# if character is '1',
 	j check_character3
 end_check2:
-	addi $t6, $zero, 1				# mult = 1
+	add $t6, $zero, 1				# mult = 1
 	b power_loop
 check_character3:
 	beq $t3, 50, end_check3			# if character is '2',
 	j check_character4
 end_check3:
-	addi $t6, $zero, 2				# mult = 2
+	add $t6, $zero, 2				# mult = 2
 	b power_loop
 check_character4:
 	beq $t3, 51, end_check4			# if character is '3'
 	j check_character5
 end_check4:
-	addi $t6, $zero, 3				# mult = 3
+	add $t6, $zero, 3				# mult = 3
 	b power_loop
 check_character5:
 	beq $t3, 52, end_check5			# if character is '4'
 	j check_character6
 end_check5:
-	addi $t6, $zero, 4				# mult = 4
+	add $t6, $zero, 4				# mult = 4
 	b power_loop
 check_character6:
 	beq $t3, 53, end_check6			# if character is '5'
 	j check_character7
 end_check6:
-	addi $t6, $zero, 5				# mult = 5
+	add $t6, $zero, 5				# mult = 5
 	b power_loop
 check_character7:
 	beq $t3, 54, end_check7			# if character is '6'
 	j check_character8
 end_check7:
-	addi $t6, $zero, 6				# mult = 6
+	add $t6, $zero, 6				# mult = 6
 	b power_loop
 check_character8:
 	beq $t3, 55, end_check8			# if character is '7'
 	j check_character9
 end_check8:
-	addi $t6, $zero, 7				# mult = 7
+	add $t6, $zero, 7				# mult = 7
 	b power_loop
 check_character9:
 	beq $t3, 56, end_check9			# if character is '8'
 	j check_character10
 end_check9:
-	addi $t6, $zero, 8				# mult = 8
+	add $t6, $zero, 8				# mult = 8
 	b power_loop
 check_character10:
 	beq $t3, 57, end_check10		# if character is '9'
 	j check_character11
 end_check10:
-	addi $t6, $zero, 9				# mult = 9
+	add $t6, $zero, 9				# mult = 9
 	b power_loop
 check_character11:
 	beq $t3, 65, end_check11		# if character is 'A'
 	beq $t3, 97, end_check11		# or 'a'
 	j check_character12
 end_check11:
-	addi $t6, $zero, 10				# mult = 10
+	add $t6, $zero, 10				# mult = 10
 	b power_loop
 check_character12:
 	beq $t3, 66, end_check12		# if character is 'B'
 	beq $t3, 98, end_check12		# or 'b'
 	j check_character13
 end_check12:
-	addi $t6, $zero, 11				# mult = 11
+	add $t6, $zero, 11				# mult = 11
 	b power_loop
 check_character13:
 	beq $t3, 67, end_check13		# if character is 'C'
@@ -185,7 +196,7 @@ end_check15:
 check_character16:
 	beq $t3, 70, end_check16		# if character is 'F'
 	beq $t3, 102, end_check16		# or 'f', mult = 15
-	j error							# otherwise, display error message
+	j error							# if none or the above, display error message
 end_check16:
 	addi $t6, $zero, 15				
 	b power_loop
@@ -195,3 +206,4 @@ hex_str: .space 9
 prompt: .asciiz "Enter Hexadecimal: "
 error_msg: .asciiz "Invalid Hexadcimal Number\n"
 dec_str: .asciiz "Decimal: "
+new_line: .asciiz "\n\n"
